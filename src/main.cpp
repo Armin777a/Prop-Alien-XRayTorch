@@ -5,7 +5,8 @@
 // ==================== Constants ====================
 
 // CHANGE SETTINGS
-#define BLINKER_DELAY               1000        // The delay between switching states in milliseconds
+#define BLINKER_DELAY_ON            1000        // The delay between switching states in milliseconds
+#define BLINKER_DELAY_OFF           500         // The delay between switching states in milliseconds
 
 
 // CHANGE PIN NUMBERS
@@ -24,12 +25,12 @@
 
 
 
-
 // ==================== Function declarations ====================
 
-void BlinkerController();               // The function that controls the blinking of the LED
-void TogglePwm(uint8_t toggle);         // The function that toggles the PWM
-void InitializeTimers();                // Timer initialization
+void BlinkerController();                       // The function that controls the blinking of the LED
+void TogglePwm(uint8_t toggle);                 // The function that toggles the PWM
+void InitializeTimers();                        // Timer initialization
+void CalculateOverflowLimit(uint16_t ledBlink); // Calculate the overflow limit based on the LED blink delay
 
 
 
@@ -41,7 +42,7 @@ uint8_t EnableBlinker = 0;              // The state of the blinking (0 = off, 1
 uint8_t BlinkerBlock = 0;               // The state of the blinking block (0 = off, 1 = on)
 
 volatile uint16_t timer2_overflow_counter = 0;
-const uint16_t OVERFLOW_LIMIT = ((BLINKER_DELAY * (F_CPU / 1024)) / (1000UL * 256UL)) - 1;
+uint16_t OVERFLOW_LIMIT = ((BLINKER_DELAY_ON * (F_CPU / 1024)) / (1000UL * 256UL)) - 1;
 
 
 
@@ -162,6 +163,13 @@ void BlinkerController() {
 
     // Set the LED brightness based on the BlinkerState
     digitalWrite(BLINKER_PIN, BlinkerState);
+
+    if (BlinkerState) {
+        CalculateOverflowLimit(BLINKER_DELAY_ON);
+    } else {
+        CalculateOverflowLimit(BLINKER_DELAY_OFF);
+    }
+
 }
 
 
@@ -172,6 +180,11 @@ void TogglePwm(uint8_t toggle) {
     } else {
         TCCR0A &= ~(1 << COM0A1);   // Disable PWM
     }
+}
+
+void CalculateOverflowLimit(uint16_t ledBlink) {
+    // Calculate the overflow limit
+    OVERFLOW_LIMIT = ((ledBlink * (F_CPU / 1024)) / (1000UL * 256UL)) - 1;
 }
 
 
