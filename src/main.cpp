@@ -28,6 +28,7 @@
 // ==================== Function declarations ====================
 
 void BlinkerController();               // The function that controls the blinking of the LED
+void TogglePwm(uint8_t toggle);         // The function that toggles the PWM
 void InitializeTimers();                // Timer initialization
 
 
@@ -98,13 +99,21 @@ void loop() {
 
 
     if (switchPos1) {                       // Check if the first switch position is active
+        if (mappedValue > 0) {              // Check if the potentiometer value is higher than 0
+            TogglePwm(1);                   //   Toggle the PWM
+        } else {                            // If the potentiometer value is 0
+            TogglePwm(0);                   //   Toggle the PWM
+        }
         OCR0A = mappedValue;                //   Set the bottom LED brightness based on the potentiometer value
+        TogglePwm(1);                       //   Toggle the PWM
         digitalWrite(SIDE_LED_PIN, LOW);    //   Turn off the side LED
     } else if (switchPos2) {                // Check if the second switch position is active
-        OCR0A = 0;                          //   Set the bottom LED brightness to 0
+        OCR0A = 0x00;                          //   Set the bottom LED brightness to 0
+        TogglePwm(0);                          //   Toggle the PWM
         digitalWrite(SIDE_LED_PIN, HIGH);   //   Turn on the side LED
     } else {                                // If none of the switch positions are active
-        OCR0A = 0;                          //   Set the bottom LED brightness to 0
+        OCR0A = 0x00;                          //   Set the bottom LED brightness to 0
+        TogglePwm(0);                          //   Toggle the PWM
         digitalWrite(SIDE_LED_PIN, LOW);    //   Turn off the side LED
     }
 
@@ -153,6 +162,16 @@ void BlinkerController() {
 
     // Set the LED brightness based on the BlinkerState
     digitalWrite(BLINKER_PIN, BlinkerState);
+}
+
+
+// Toggle PWM
+void TogglePwm(uint8_t toggle) {
+    if (toggle) {
+        TCCR0A |= (1 << COM0A1);    // Enable PWM
+    } else {
+        TCCR0A &= ~(1 << COM0A1);   // Disable PWM
+    }
 }
 
 
